@@ -1,0 +1,45 @@
+GET http://localhost:5000/mainview
+
+
+###
+
+
+POST http://localhost:5000/mainview HTTP/1.1 
+Content-Type: application/json 
+
+  {
+    "humidity": 65.0,
+    "is_sensor_on": 1,
+    "sensor_id": 1
+  }
+
+
+###
+
+
+POST http://localhost:5000//mode HTTP/1.1 
+Content-Type: application/json 
+
+{
+  "isAutomaticMode": false
+}
+
+
+
+###
+
+POST http://localhost:5000/threshold HTTP/1.1 
+Content-Type: application/json 
+
+{
+  "threshold": 50
+}
+
+###
+
+POST http://localhost:5000/sprinkler HTTP/1.1 
+Content-Type: application/json 
+
+{
+  "sprinkler_on_off": 0
+}
