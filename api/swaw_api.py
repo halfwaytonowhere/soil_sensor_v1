@@ -1,4 +1,4 @@
-import mysql.connector 
+import mysql.connector
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -7,9 +7,7 @@ import jsonpickle
 import requests
 import logging
 
-
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
-
 
 def get_connection_():
     connection = mysql.connector.connect(
@@ -18,7 +16,6 @@ def get_connection_():
             host = '127.0.0.1',
             database = 'swawapi'
 )
-
     return connection
 
 class SensorData:
@@ -30,6 +27,7 @@ class SensorData:
 
     def to_dict(self):
         return {"sensor_id": self.sensor_id, "humidity": self.humidity, "is_sensor_on": self.is_sensor_on, "sprinkler_state": self.sprinkler_state}
+    
 isAutomaticMode = True
 manual_threshold = None
 
@@ -55,36 +53,39 @@ def get_sensor_data():
         connection.close()
 
         watering_process_value = 0
-        manual_threshold_limit = 
-        
+        error_msg = None
+
         if sensor_data[0].humidity is not None and sensor_data[1].humidity is not None:
             if isAutomaticMode:
                 if sensor_data[0].humidity < 40 and sensor_data[1].humidity < 40:
                     watering_process_value = 1
                 elif sensor_data[0].humidity < 30 or sensor_data[1].humidity < 30:
                     watering_process_value = 1
-            elif not isAutomaticMode:
+            else:
                 if manual_threshold is None:
                     return jsonify({'error': 'Manual threshold not provided'}), 400
                 elif sensor_data[0].humidity < manual_threshold and sensor_data[1].humidity < manual_threshold:
                     watering_process_value = 1
                 elif sensor_data[0].humidity < (manual_threshold - 10) or sensor_data[1].humidity < (manual_threshold - 10):
                     watering_process_value = 1
-        else:
-            # obsługa sytuacji, gdy jedno lub oba humidity są None
-            if sensor_data[0].humidity is None and sensor_data[1].humidity is None:
-                error_msg = "Humidity values for both sensors are missing"
-            elif sensor_data[0].humidity is None:
-                error_msg = f"Humidity value for sensor {sensor_data[0].sensor_id} is missing"
-            else:
-                error_msg = f"Humidity value for sensor {sensor_data[1].sensor_id} is missing"
-            logging.error(error_msg)
-            return jsonify({'results': error_msg}), 500
-                
+
+        # Obsługa braku danych wilgotności
+        if sensor_data[0].humidity is None and sensor_data[1].humidity is None:
+            error_msg = "Humidity values for both sensors are missing"
+        elif sensor_data[0].humidity is None:
+            error_msg = f"Humidity value for sensor {sensor_data[0].sensor_id} is missing"
+        elif sensor_data[1].humidity is None:
+            error_msg = f"Humidity value for sensor {sensor_data[1].sensor_id} is missing"
+        elif sensor_data[0].humidity < 10:
+            error_msg = f"Humidity value for sensor {sensor_data[0].sensor_id} is below 10"
+        elif sensor_data[1].humidity < 10:
+            error_msg = f"Humidity value for sensor {sensor_data[1].sensor_id} is below 10"
+
+
         sensor_data_dicts = [data.to_dict() for data in sensor_data]
-        response_data = {"sensor_data": sensor_data_dicts, "watering_process": watering_process_value, "sprinkler_state": sensor_data[-1].sprinkler_state}
+        response_data = {"sensor_data": sensor_data_dicts, "watering_process": watering_process_value, "sprinkler_state": sensor_data[-1].sprinkler_state, "error_message": error_msg}
         return jsonify(response_data)
-    
+
     except mysql.connector.Error as err:
         logging.error(f'Błąd w połączeniu z bazą danych: {err}')
         return jsonify({'results': 'Nie udało się połączyć z bazą danych.'}), 500
@@ -118,14 +119,34 @@ def set_mode():
     isAutomaticMode = request_data['isAutomaticMode']
     return jsonify(results='Mode set to ' + str(isAutomaticMode)), 200
 
+######################################################################################
+# --------------------------------------------------------------------------------------------------
+#    Sprawdzenie za pomocą GET czy AutomaticMode ustawił sie według żądania POST
+# --------------------------------------------------------------------------------------------------
+@app.route('/mode', methods=['GET'])
+def get_mode():
+    global isAutomaticMode
+    return_data = { "AutomaticMode" : isAutomaticMode}
+    return jsonify(return_data)
+######################################################################################
+
 @app.route('/threshold', methods=['POST'])
 def set_threshold():
     global manual_threshold
     if 'manual_threshold' not in globals():
         manual_threshold = None
     manual_threshold = request.json['threshold']
-    return 'Manual threshold set to {}'.format(manual_threshold)
+    return 'Manual threshold : {}'.format(manual_threshold)
 
+######################################################################################
+# --------------------------------------------------------------------------------------------------
+#    Sprawdzenie za pomocą GET czy threshold ustawił według żądania POST
+# --------------------------------------------------------------------------------------------------
+@app.route('/threshold', methods=['GET'])
+def get_threshold():
+    global manual_threshold
+    return 'Manual threshold : {}'.format(manual_threshold)
+######################################################################################
 
 @app.route('/sprinkler', methods=['POST'])
 def sprinkler_toggle():
