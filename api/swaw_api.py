@@ -92,15 +92,15 @@ def get_sensor_data():
 
         # Sprawdzanie błędów związanych z brakiem wartości wilgotności
         if sensor_data[0].humidity is None and sensor_data[1].humidity is None:
-            error_msg = "Humidity values for both sensors are missing"
+            error_msg = "Brakuje wartości wilgotności dla obu czujników"
         elif sensor_data[0].humidity is None:
-            error_msg = f"Humidity value for sensor {sensor_data[0].sensor_id} is missing"
+            error_msg = f"Brakuje wartości wilgotności dla czujnika {sensor_data[0].sensor_id}"
         elif sensor_data[1].humidity is None:
-            error_msg = f"Humidity value for sensor {sensor_data[1].sensor_id} is missing"
+            error_msg = f"Brakuje wartości wilgotności dla czujnika {sensor_data[1].sensor_id}"
         elif sensor_data[0].humidity < 10:
-            error_msg = f"Humidity value for sensor {sensor_data[0].sensor_id} is below 10"
+            error_msg = f"Wartość wilgotności dla czujnika {sensor_data[0].sensor_id} jest poniżej 10%"
         elif sensor_data[1].humidity < 10:
-            error_msg = f"Humidity value for sensor {sensor_data[1].sensor_id} is below 10"
+            error_msg = f"Wartość wilgotności dla czujnika {sensor_data[1].sensor_id} jest poniżej 10%"
 
         # Przygotowanie zwracanych danych
         sensor_data_dicts = [data.to_dict() for data in sensor_data]
