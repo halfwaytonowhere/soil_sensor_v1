@@ -4,7 +4,6 @@ from flask import jsonify
 from flask import request
 from flask import Response
 import jsonpickle
-import requests
 import logging
 
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
@@ -55,21 +54,44 @@ def get_sensor_data():
         watering_process_value = 0
         error_msg = None
 
-        if sensor_data[0].humidity is not None and sensor_data[1].humidity is not None:
-            if isAutomaticMode:
-                if sensor_data[0].humidity < 40 and sensor_data[1].humidity < 40:
-                    watering_process_value = 1
-                elif sensor_data[0].humidity < 30 or sensor_data[1].humidity < 30:
-                    watering_process_value = 1
-            else:
-                if manual_threshold is None:
-                    return jsonify({'error': 'Manual threshold not provided'}), 400
-                elif sensor_data[0].humidity < manual_threshold and sensor_data[1].humidity < manual_threshold:
-                    watering_process_value = 1
-                elif sensor_data[0].humidity < (manual_threshold - 10) or sensor_data[1].humidity < (manual_threshold - 10):
-                    watering_process_value = 1
+        if sensor_data[0].is_sensor_on == 1 and sensor_data[1].is_sensor_on == 1:
+            if sensor_data[0].humidity is not None and sensor_data[1].humidity is not None:
+                if isAutomaticMode:
+                    if sensor_data[0].humidity < 40 and sensor_data[1].humidity < 40:
+                        watering_process_value = 1
+                    elif sensor_data[0].humidity < 30 or sensor_data[1].humidity < 30:
+                        watering_process_value = 1
+                else:
+                    if manual_threshold is None:
+                        return jsonify(error='Wprowadz prog nawadniania'), 400
+                    if sensor_data[0].humidity < manual_threshold and sensor_data[1].humidity < manual_threshold:
+                        watering_process_value = 1
+                    elif sensor_data[0].humidity < (manual_threshold - 10) or sensor_data[1].humidity < (manual_threshold - 10):
+                        watering_process_value = 1
 
-        # Obsługa braku danych wilgotności
+        elif sensor_data[0].is_sensor_on == 1:
+            if sensor_data[0].humidity is not None:
+                if isAutomaticMode:
+                    if sensor_data[0].humidity < 40:
+                        watering_process_value = 1
+                else:
+                    if manual_threshold is None:
+                        return jsonify(error='Wprwoadz prog nawadniania'), 400
+                    elif sensor_data[0].humidity < manual_threshold:
+                        watering_process_value = 1
+
+        elif sensor_data[1].is_sensor_on == 1:
+            if sensor_data[1].humidity is not None:
+                if isAutomaticMode:
+                    if sensor_data[1].humidity < 40:
+                        watering_process_value = 1
+                else:
+                    if manual_threshold is None:
+                        return jsonify(error='Wprowadz prog nawadniania'), 400
+                    elif sensor_data[1].humidity < manual_threshold:
+                        watering_process_value = 1
+
+
         if sensor_data[0].humidity is None and sensor_data[1].humidity is None:
             error_msg = "Humidity values for both sensors are missing"
         elif sensor_data[0].humidity is None:
@@ -117,7 +139,8 @@ def set_mode():
     global isAutomaticMode
     request_data = request.get_json()
     isAutomaticMode = request_data['isAutomaticMode']
-    return jsonify(results='Mode set to ' + str(isAutomaticMode)), 200
+    return_data = { "AutomaticMode" : isAutomaticMode}
+    return jsonify(return_data), 200
 
 ######################################################################################
 # --------------------------------------------------------------------------------------------------
