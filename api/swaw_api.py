@@ -7,7 +7,7 @@ import logging
 logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 # Funkcja zwracająca połączenie do bazy danych
-def get_connection():
+def get_connection_():
     connection = mysql.connector.connect(
         user='root',
         password='localhost',
@@ -45,7 +45,7 @@ CORS(app)
 def get_sensor_data():
     global isAutomaticMode, manual_threshold
     try:
-        connection = get_connection()
+        connection = get_connection_()
         cursor = connection.cursor(dictionary=True)
         query = """
         (SELECT sensor_id, humidity, is_sensor_on, sprinkler_state FROM swawapi.sensor_data WHERE sensor_id = 1 ORDER BY created_at DESC LIMIT 1)
@@ -124,7 +124,7 @@ def add_sensor_data():
         return jsonify(error='Brak niektórych parametrów'), 400
 
     try:
-        connection = get_connection()
+        connection = get_connection_()
         cursor = connection.cursor()
         query = """INSERT INTO sensor_data (sensor_id, humidity, is_sensor_on) VALUES (%s, %s, %s)"""
         cursor.execute(query, (request_data['sensor_id'], request_data['humidity'], request_data['is_sensor_on']))
@@ -175,7 +175,7 @@ def sprinkler_toggle():
     if 'sprinkler_on' not in data:
         return jsonify(error='Brak niektórych parametrów'), 400
 
-    connection = get_connection()
+    connection = get_connection_()
     cursor = connection.cursor()
     query = """
         UPDATE sensor_data SET sprinkler_state=%s
