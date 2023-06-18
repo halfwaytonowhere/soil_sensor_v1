@@ -1,6 +1,6 @@
 import mysql.connector
 from flask import Flask, jsonify, request, Response
-# from flask_cors import CORS
+from flask_cors import CORS
 import jsonpickle
 import logging
 
@@ -39,7 +39,7 @@ isAutomaticMode = True
 manual_threshold = None
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
 
 # Pobranie danych z czujników
 @app.route('/mainview', methods=['GET'])
