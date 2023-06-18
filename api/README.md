@@ -31,7 +31,7 @@ RESTful API for controlling and monitoring a garden irrigation system.
 - `GET /threshold`: Retrieve the current manual threshold.
 - `POST /sprinkler`: Toggle the sprinkler state.
 
-## Authors
+## Author
 
 - Agata Krześniak
 
