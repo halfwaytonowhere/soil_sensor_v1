@@ -1,10 +1,11 @@
 import mysql.connector
 from flask import Flask, jsonify, request, Response
-from flask_cors import CORS
+# from flask_cors import CORS
 import jsonpickle
 import logging
 
-logging.basicConfig(filename='app.log', level=logging.DEBUG)
+#Konfiguracja logowania mająca na celu zapisywanie logów do pliku "swaw_api.log"
+logging.basicConfig(filename='swaw_api.log', level=logging.DEBUG)
 
 # Funkcja zwracająca połączenie do bazy danych
 def get_connection_():
@@ -38,7 +39,7 @@ isAutomaticMode = True
 manual_threshold = None
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
 # Pobranie danych z czujników
 @app.route('/mainview', methods=['GET'])
@@ -92,15 +93,15 @@ def get_sensor_data():
 
         # Sprawdzanie błędów związanych z brakiem wartości wilgotności
         if sensor_data[0].humidity is None and sensor_data[1].humidity is None:
-            error_msg = "Brakuje wartości wilgotności dla obu czujników"
+            error_msg = "Humidity values are missing for both sensors"
         elif sensor_data[0].humidity is None:
-            error_msg = f"Brakuje wartości wilgotności dla czujnika {sensor_data[0].sensor_id}"
+            error_msg = f"The humidity value for the sensor {sensor_data[0].sensor_id} is missing"
         elif sensor_data[1].humidity is None:
-            error_msg = f"Brakuje wartości wilgotności dla czujnika {sensor_data[1].sensor_id}"
+            error_msg = f"The humidity value for the sensor{sensor_data[1].sensor_id} is missing"
         elif sensor_data[0].humidity < 10:
-            error_msg = f"Wartość wilgotności dla czujnika {sensor_data[0].sensor_id} jest poniżej 10%"
+            error_msg = f"The humidity value for sensor {sensor_data[0].sensor_id} is below 10%"
         elif sensor_data[1].humidity < 10:
-            error_msg = f"Wartość wilgotności dla czujnika {sensor_data[1].sensor_id} jest poniżej 10%"
+            error_msg = f"The humidity value for sensor {sensor_data[1].sensor_id}  is below 10%"
 
         # Przygotowanie zwracanych danych
         sensor_data_dicts = [data.to_dict() for data in sensor_data]
@@ -113,15 +114,15 @@ def get_sensor_data():
         return jsonify(response_data)
 
     except mysql.connector.Error as err:
-        logging.error(f'Błąd w połączeniu z bazą danych: {err}')
-        return jsonify({'results': 'Nie udało się połączyć z bazą danych.'}), 500
+        logging.error(f"Database connection error: {err}")
+        return jsonify({"results": "Failed to connect to the database."}), 500
 
 # Dodanie danych z czujników
 @app.route('/mainview', methods=['POST'])
 def add_sensor_data():
     request_data = request.get_json()
     if 'sensor_id' not in request_data or 'humidity' not in request_data or 'is_sensor_on' not in request_data:
-        return jsonify(error='Brak niektórych parametrów'), 400
+        return jsonify(error="Missing parameters"), 400
 
     try:
         connection = get_connection_()
@@ -157,8 +158,6 @@ def get_mode():
 @app.route('/threshold', methods=['POST'])
 def set_threshold():
     global manual_threshold
-    if 'manual_threshold' not in globals():
-        manual_threshold = None
     manual_threshold = request.json['threshold']
     return 'Manual threshold: {}'.format(manual_threshold)
 
@@ -173,7 +172,7 @@ def get_threshold():
 def sprinkler_toggle():
     data = request.get_json()
     if 'sprinkler_on' not in data:
-        return jsonify(error='Brak niektórych parametrów'), 400
+        return jsonify(error="Missing parameters"), 400
 
     connection = get_connection_()
     cursor = connection.cursor()
